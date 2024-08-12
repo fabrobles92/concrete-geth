@@ -23,13 +23,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"text/template"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/iancoleman/orderedmap"
 )
 
 //go:embed solgen.tpl
@@ -71,24 +70,6 @@ func getTypeString(internalType string, arg abi.Argument) string {
 	} else {
 		return arg.Type.String()
 	}
-}
-
-func orderMapKeys(unorderedMap map[string]abi.Method) *orderedmap.OrderedMap {
-	orderedMap := orderedmap.New()
-	keys := make([]string, len(unorderedMap))
-	cont := 0
-	for key := range unorderedMap {
-		keys[cont] = key
-		cont++
-	}
-
-	sort.Strings(keys)
-
-	for _, orderedKey := range keys {
-		orderedMap.Set(orderedKey, unorderedMap[orderedKey])
-	}
-
-	return orderedMap
 }
 
 func withLocation(typeStr string, arg abi.Argument) string {
@@ -135,16 +116,19 @@ func generateSolidityLibrary(ABI abi.ABI, cABI customABI, config Config) (string
 		"ImportPaths": importPaths,
 	}
 
-	orderedAbiMethods := orderMapKeys(ABI.Methods)
+	methodNames := make([]string, len(ABI.Methods))
+	for name := range ABI.Methods {
+		methodNames = append(methodNames, name)
+	}
+	slices.Sort(methodNames)
 
-	for _, mIdx := range orderedAbiMethods.Keys() {
-		methodInterface, _ := orderedAbiMethods.Get(mIdx)
-		method := methodInterface.(abi.Method)
+	for _, name := range methodNames {
+		method := ABI.Methods[name]
 		inputSig := []string{}
 		inputTypes := []string{}
 		inputNames := []string{}
 		for inIdx, input := range method.Inputs {
-			internalType := cABI.MethodsByName[mIdx].Inputs[inIdx].InternalType
+			internalType := cABI.MethodsByName[name].Inputs[inIdx].InternalType
 			typeStr := getTypeString(internalType, input)
 			inputSig = append(inputSig, withLocation(typeStr, input))
 			inputTypes = append(inputTypes, typeStr)
@@ -154,7 +138,7 @@ func generateSolidityLibrary(ABI abi.ABI, cABI customABI, config Config) (string
 		outputSig := []string{}
 		outputTypes := []string{}
 		for outIdx, output := range method.Outputs {
-			internalType := cABI.MethodsByName[mIdx].Outputs[outIdx].InternalType
+			internalType := cABI.MethodsByName[name].Outputs[outIdx].InternalType
 			typeStr := getTypeString(internalType, output)
 			outputSig = append(outputSig, withLocation(typeStr, output))
 			outputTypes = append(outputTypes, typeStr)

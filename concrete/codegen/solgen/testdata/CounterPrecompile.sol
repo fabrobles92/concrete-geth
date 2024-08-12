@@ -8,6 +8,27 @@ import "./Dependency.sol";
 library CounterPrecompile {
     address constant precompileAddress = address(0x8000000000000000000000000000000000000000);
 
+    function () internal {
+        (bool success, ) = precompileAddress.call(
+            abi.encodeWithSignature("")
+        );
+        require(success);
+    }
+
+    function () internal {
+        (bool success, ) = precompileAddress.call(
+            abi.encodeWithSignature("")
+        );
+        require(success);
+    }
+
+    function () internal {
+        (bool success, ) = precompileAddress.call(
+            abi.encodeWithSignature("")
+        );
+        require(success);
+    }
+
     function increment() internal {
         (bool success, ) = precompileAddress.call(
             abi.encodeWithSignature("increment()")
