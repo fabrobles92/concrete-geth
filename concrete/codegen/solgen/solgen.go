@@ -116,7 +116,7 @@ func generateSolidityLibrary(ABI abi.ABI, cABI customABI, config Config) (string
 		"ImportPaths": importPaths,
 	}
 
-	methodNames := make([]string, len(ABI.Methods))
+	methodNames := make([]string, 0, len(ABI.Methods))
 	for name := range ABI.Methods {
 		methodNames = append(methodNames, name)
 	}
